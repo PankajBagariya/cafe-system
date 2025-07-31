@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe Bluez Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --background: hsl(0, 0%, 7%);
+            --foreground: hsl(0, 0%, 95%);
+            --card: hsl(0, 0%, 10%);
+            --card-foreground: hsl(0, 0%, 95%);
+            --primary: hsl(51, 100%, 50%);
+            --primary-foreground: hsl(0, 0%, 7%);
+            --secondary: hsl(0, 0%, 15%);
+            --secondary-foreground: hsl(0, 0%, 95%);
+            --muted: hsl(0, 0%, 13%);
+            --muted-foreground: hsl(0, 0%, 60%);
+            --border: hsl(0, 0%, 20%);
+            --success: hsl(142, 71%, 45%);
+            --destructive: hsl(0, 84%, 60%);
+            --warning: hsl(38, 92%, 50%);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--background) 0%, hsl(217, 33%, 18%) 100%);
+            color: var(--foreground);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--card), hsl(0, 0%, 12%));
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 20px hsl(0, 0%, 0%, 0.3);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary), hsl(45, 100%, 60%));
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            position: relative;
+        }
+
+        .logo::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, var(--foreground), hsl(0, 0%, 80%));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: var(--muted-foreground);
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .status-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .status-badge {
+            background: var(--muted);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        }
+
+        .card {
+            background: linear-gradient(135deg, var(--card), hsl(0, 0%, 12%));
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px hsl(0, 0%, 0%, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 30px hsl(0, 0%, 0%, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            color: var(--muted-foreground);
+            font-weight: 500;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+            font-size: 0.8rem;
+            color: var(--muted-foreground);
+        }
+
+        .sales-card .card-icon {
+            background: linear-gradient(135deg, var(--primary), hsl(45, 100%, 60%));
+        }
+
+        .sales-card .card-value {
+            color: var(--primary);
+        }
+
+        .staff-card .card-icon {
+            background: linear-gradient(135deg, hsl(220, 70%, 50%), hsl(220, 70%, 60%));
+        }
+
+        .staff-card .card-value {
+            color: hsl(220, 70%, 50%);
+        }
+
+        .inventory-card .card-icon {
+            background: linear-gradient(135deg, var(--success), hsl(142, 71%, 55%));
+        }
+
+        .inventory-card .card-value {
+            color: var(--success);
+        }
+
+        .inventory-card.low-stock .card-icon {
+            background: linear-gradient(135deg, var(--destructive), hsl(0, 84%, 70%));
+        }
+
+        .inventory-card.low-stock .card-value {
+            color: var(--destructive);
+        }
+
+        .rating-card .card-icon {
+            background: linear-gradient(135deg, var(--warning), hsl(38, 92%, 60%));
+        }
+
+        .rating-card .card-value {
+            color: var(--warning);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin: 1rem 0;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table th {
+            color: var(--muted-foreground);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .table tbody tr:hover {
+            background: var(--muted);
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .badge-warning {
+            background: var(--warning);
+            color: var(--primary-foreground);
+        }
+
+        .badge-destructive {
+            background: var(--destructive);
+            color: white;
+        }
+
+        .stars {
+            display: inline-flex;
+            gap: 0.125rem;
+        }
+
+        .star {
+            color: var(--warning);
+        }
+
+        .star.empty {
+            color: var(--muted-foreground);
+        }
+
+        .footer {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--muted-foreground);
+        }
+
+        .footer-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(1.1);
+            }
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid var(--muted);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <h2 style="color: var(--primary); font-size: 1.5rem;">Loading Cafe Bluez Dashboard</h2>
+        <p style="color: var(--muted-foreground);">Fetching real-time cafe operations data</p>
+    </div>
+
+    <div id="dashboard" style="display: none;">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <div class="logo">☕</div>
+                        <div>
+                            <h1 class="title">Cafe Bluez</h1>
+                            <p class="subtitle">Real-time operations dashboard</p>
+                        </div>
+                    </div>
+                    <div class="status-info">
+                        <div class="status-badge">
+                            <span>📅</span>
+                            <span id="current-date"></span>
+                        </div>
+                        <div class="status-badge">
+                            <span>🕐</span>
+                            <span id="current-time"></span>
+                        </div>
+                        <div class="status-badge" style="background: var(--success); color: white;">
+                            <span>📡</span>
+                            <span>System Online</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-4">
+                <div class="card sales-card">
+                    <div class="card-header">
+                        <div class="card-title">Today's Revenue</div>
+                        <div class="card-icon">₹</div>
+                    </div>
+                    <div class="card-value" id="total-sales">₹121.00</div>
+                    <div class="card-subtitle" id="total-transactions">4 transactions</div>
+                </div>
+
+                <div class="card staff-card">
+                    <div class="card-header">
+                        <div class="card-title">Staff Present</div>
+                        <div class="card-icon">👥</div>
+                    </div>
+                    <div class="card-value" id="staff-count">2</div>
+                    <div class="card-subtitle">Active today</div>
+                </div>
+
+                <div class="card inventory-card" id="inventory-card">
+                    <div class="card-header">
+                        <div class="card-title">Inventory Status</div>
+                        <div class="card-icon">📦</div>
+                    </div>
+                    <div class="card-value" id="inventory-status">1 Low</div>
+                    <div class="card-subtitle">4 items tracked</div>
+                </div>
+
+                <div class="card rating-card">
+                    <div class="card-header">
+                        <div class="card-title">Customer Rating</div>
+                        <div class="card-icon">⭐</div>
+                    </div>
+                    <div class="card-value" id="avg-rating">4.7/5</div>
+                    <div class="card-subtitle" id="review-count">3 reviews</div>
+                </div>
+            </div>
+
+            <!-- Charts and Tables Grid -->
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Sales Trend</div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Recent Transactions</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Amount</th>
+                                    <th>Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sales-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Inventory</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Stock</th>
+                                    <th>Reorder Level</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Staff Attendance</div>
+                    </div>
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Staff</th>
+                                    <th>Time In</th>
+                                    <th>Time Out</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="attendance-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Customer Feedback</div>
+                </div>
+                <div class="table-container">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Rating</th>
+                                <th>Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody id="feedback-table">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+                <p>Cafe Bluez Dashboard • Real-time updates every 60 seconds</p>
+                <p style="margin-top: 0.5rem; font-size: 0.8rem;">Built with precision for efficient cafe management</p>
+                <div class="footer-status">
+                    <div class="status-dot"></div>
+                    <span style="font-size: 0.8rem; font-family: monospace;">System Online</span>
+                    <div class="status-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo data
+        const cafeData = {
+            salesLog: [
+                { date: '2025-07-31', time: '11:30', itemName: 'Veg Burger', quantity: 2, price: 33, paymentType: 'UPI', staffName: 'Ram' },
+                { date: '2025-07-31', time: '13:15', itemName: 'Coffee', quantity: 4, price: 40, paymentType: 'Cash', staffName: 'Geeta' },
+                { date: '2025-07-31', time: '14:20', itemName: 'Masala Tea', quantity: 3, price: 15, paymentType: 'UPI', staffName: 'Ram' },
+                { date: '2025-07-31', time: '15:45', itemName: 'Veg Burger', quantity: 1, price: 33, paymentType: 'Cash', staffName: 'Geeta' }
+            ],
+            inventory: [
+                { itemName: 'Coffee Beans', stockLeft: 15, reorderThreshold: 20 },
+                { itemName: 'Burger Buns', stockLeft: 25, reorderThreshold: 10 },
+                { itemName: 'Tea Leaves', stockLeft: 30, reorderThreshold: 15 },
+                { itemName: 'Milk', stockLeft: 8, reorderThreshold: 10 }
+            ],
+            attendance: [
+                { staffName: 'Ram', date: '2025-07-31', timeIn: '09:00', timeOut: '18:00' },
+                { staffName: 'Geeta', date: '2025-07-31', timeIn: '10:00', timeOut: '19:00' }
+            ],
+            feedback: [
+                { date: '2025-07-31', rating: 5, feedback: 'Excellent service and food!' },
+                { date: '2025-07-30', rating: 4, feedback: 'Good food, quick service' },
+                { date: '2025-07-29', rating: 5, feedback: 'Great coffee and atmosphere' }
+            ]
+        };
+
+        // Update time display
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' 
+            });
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', minute: '2-digit' 
+            });
+        }
+
+        // Calculate summary statistics
+        function updateSummaryCards() {
+            const totalSales = cafeData.salesLog.reduce((sum, sale) => sum + (sale.price * sale.quantity), 0);
+            const lowStockItems = cafeData.inventory.filter(item => item.stockLeft <= item.reorderThreshold).length;
+            const avgRating = cafeData.feedback.reduce((sum, fb) => sum + fb.rating, 0) / cafeData.feedback.length;
+
+            document.getElementById('total-sales').textContent = `₹${totalSales.toFixed(2)}`;
+            document.getElementById('total-transactions').textContent = `${cafeData.salesLog.length} transactions`;
+            document.getElementById('staff-count').textContent = cafeData.attendance.length;
+            document.getElementById('inventory-status').textContent = lowStockItems > 0 ? `${lowStockItems} Low` : 'All Good';
+            document.getElementById('avg-rating').textContent = `${avgRating.toFixed(1)}/5`;
+            document.getElementById('review-count').textContent = `${cafeData.feedback.length} reviews`;
+
+            // Update inventory card styling
+            const inventoryCard = document.getElementById('inventory-card');
+            if (lowStockItems > 0) {
+                inventoryCard.classList.add('low-stock');
+            }
+        }
+
+        // Populate sales table
+        function populateSalesTable() {
+            const tbody = document.getElementById('sales-table');
+            tbody.innerHTML = '';
+            
+            cafeData.salesLog.forEach(sale => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${sale.time}</td>
+                    <td>${sale.itemName}</td>
+                    <td>${sale.quantity}</td>
+                    <td>₹${(sale.price * sale.quantity).toFixed(2)}</td>
+                    <td><span class="badge ${sale.paymentType === 'UPI' ? 'badge-success' : 'badge-warning'}">${sale.paymentType}</span></td>
+                `;
+            });
+        }
+
+        // Populate inventory table
+        function populateInventoryTable() {
+            const tbody = document.getElementById('inventory-table');
+            tbody.innerHTML = '';
+            
+            cafeData.inventory.forEach(item => {
+                const row = tbody.insertRow();
+                const isLowStock = item.stockLeft <= item.reorderThreshold;
+                row.innerHTML = `
+                    <td>${item.itemName}</td>
+                    <td>${item.stockLeft}</td>
+                    <td>${item.reorderThreshold}</td>
+                    <td><span class="badge ${isLowStock ? 'badge-destructive' : 'badge-success'}">${isLowStock ? 'Low Stock' : 'Good'}</span></td>
+                `;
+            });
+        }
+
+        // Populate attendance table
+        function populateAttendanceTable() {
+            const tbody = document.getElementById('attendance-table');
+            tbody.innerHTML = '';
+            
+            cafeData.attendance.forEach(att => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${att.staffName}</td>
+                    <td>${att.timeIn}</td>
+                    <td>${att.timeOut || 'Active'}</td>
+                    <td><span class="badge badge-success">Present</span></td>
+                `;
+            });
+        }
+
+        // Populate feedback table
+        function populateFeedbackTable() {
+            const tbody = document.getElementById('feedback-table');
+            tbody.innerHTML = '';
+            
+            cafeData.feedback.forEach(fb => {
+                const row = tbody.insertRow();
+                const stars = '★'.repeat(fb.rating) + '☆'.repeat(5 - fb.rating);
+                row.innerHTML = `
+                    <td>${fb.date}</td>
+                    <td><span class="stars" style="color: var(--warning);">${stars}</span></td>
+                    <td>${fb.feedback}</td>
+                `;
+            });
+        }
+
+        // Create sales chart
+        function createSalesChart() {
+            const ctx = document.getElementById('salesChart').getContext('2d');
+            
+            // Group sales by hour for the chart
+            const hourlyData = {};
+            cafeData.salesLog.forEach(sale => {
+                const hour = parseInt(sale.time.split(':')[0]);
+                const amount = sale.price * sale.quantity;
+                hourlyData[hour] = (hourlyData[hour] || 0) + amount;
+            });
+
+            const hours = Object.keys(hourlyData).sort((a, b) => a - b);
+            const amounts = hours.map(hour => hourlyData[hour]);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours.map(h => `${h}:00`),
+                    datasets: [{
+                        label: 'Sales (₹)',
+                        data: amounts,
+                        borderColor: 'hsl(51, 100%, 50%)',
+                        backgroundColor: 'hsl(51, 100%, 50%, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: 'hsl(0, 0%, 95%)' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: 'hsl(0, 0%, 60%)' },
+                            grid: { color: 'hsl(0, 0%, 20%)' }
+                        },
+                        y: {
+                            ticks: { color: 'hsl(0, 0%, 60%)' },
+                            grid: { color: 'hsl(0, 0%, 20%)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize dashboard
+        function initDashboard() {
+            updateTime();
+            updateSummaryCards();
+            populateSalesTable();
+            populateInventoryTable();
+            populateAttendanceTable();
+            populateFeedbackTable();
+            createSalesChart();
+
+            // Update time every second
+            setInterval(updateTime, 1000);
+
+            // Show dashboard, hide loading
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        // Simulate loading delay and initialize
+        setTimeout(initDashboard, 2000);
+    </script>
+</body>
+</html>
